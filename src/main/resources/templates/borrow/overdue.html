@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{fragments/layout}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>逾期借阅记录 - 图书管理系统</title>
+    <style>
+        .search-form {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .action-buttons .btn {
+            margin-right: 5px;
+        }
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content" class="container-fluid">
+    <div class="page-header">
+        <h1 class="text-center my-4">逾期借阅记录</h1>
+    </div>
+    
+    <!-- 消息提示 -->
+    <div th:if="${successMessage}" class="alert alert-success">
+        <i class="fa fa-check-circle"></i> <span th:text="${successMessage}">操作成功！</span>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger">
+        <i class="fa fa-exclamation-circle"></i> <span th:text="${errorMessage}">操作失败，请重试。</span>
+    </div>
+    
+    <!-- 警告提示 -->
+    <div class="alert alert-danger mb-4">
+        <div class="d-flex align-items-center">
+            <i class="fa fa-exclamation-triangle fa-2x mr-3"></i>
+            <div>
+                <strong>紧急通知</strong>
+                <p class="mb-0">系统中当前有 <span class="text-2xl font-bold" th:text="${records.size()}">15</span> 条逾期未还的借阅记录，请立即处理！</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 统计信息 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-value" th:text="${totalOverdueDays}">45</div>
+                        <div class="stat-label">总逾期天数</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-value" th:text="${totalFine}">22.5</div>
+                        <div class="stat-label">总罚款金额（元）</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-value" th:text="${mostOverdueDays}">15</div>
+                        <div class="stat-label">最长逾期天数</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-value" th:text="${overdueUsers.size()}">12</div>
+                        <div class="stat-label">逾期用户数</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 操作栏 -->
+    <div class="d-flex justify-content-between mb-3">
+        <div>
+            <span class="text-muted">显示 <strong th:text="${startIndex != null ? startIndex + 1 : 1}">1</strong>-<strong th:text="${endIndex != null ? endIndex : 0}">10</strong> 条，共 <strong th:text="${totalElements != null ? totalElements : 0}">100</strong> 条</span>
+        </div>
+        <div>
+            <a href="/borrow/records" class="btn btn-secondary">
+                <i class="fa fa-list"></i> 全部记录
+            </a>
+            <button class="btn btn-warning ml-2" id="notifyBtn">
+                <i class="fa fa-bell"></i> 发送通知
+            </button>
+        </div>
+    </div>
+    
+    <!-- 逾期记录表格 -->
+    <div class="card">
+        <div class="card-body">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>用户信息</th>
+                            <th>图书信息</th>
+                            <th>借阅日期</th>
+                            <th>应还日期</th>
+                            <th>逾期天数</th>
+                            <th>罚款金额</th>
+                            <th>联系方式</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="record : ${records}">
+                            <td>
+                                <div th:text="${record.user.fullName}" class="font-weight-bold"></div>
+                                <div th:text="${record.user.username}" class="text-sm text-gray-600"></div>
+                            </td>
+                            <td>
+                                <div th:text="${record.book.title}" class="font-weight-bold"></div>
+                                <div th:text="${record.book.author}" class="text-sm text-gray-600"></div>
+                            </td>
+                            <td th:text="${#temporals.format(record.borrowDate, 'yyyy-MM-dd')}"></td>
+                            <td th:text="${#temporals.format(record.dueDate, 'yyyy-MM-dd')}" class="text-danger"></td>
+                            <td class="text-danger font-weight-bold">
+                                <span th:text="${T(java.time.LocalDate).now().until(record.dueDate).days * -1}"></span> 天
+                            </td>
+                            <td class="text-danger font-weight-bold" th:text="${record.fineAmount != null ? record.fineAmount + ' 元' : '0 元'}"></td>
+                            <td>
+                                <div th:if="${record.user.phone}" class="mb-1">
+                                    <i class="fa fa-phone mr-1"></i> <span th:text="${record.user.phone}"></span>
+                                </div>
+                                <div th:if="${record.user.email}">
+                                    <i class="fa fa-envelope mr-1"></i> <span th:text="${record.user.email}"></span>
+                                </div>
+                            </td>
+                            <td class="action-buttons">
+                                <a th:href="@{/return/{id}(id=${record.id})}" 
+                                   class="btn btn-sm btn-primary" 
+                                   onclick="return confirm('确定要归还这本书吗？罚款将自动计算。');">
+                                    <i class="fa fa-undo"></i> 归还
+                                </a>
+                                <button class="btn btn-sm btn-warning mt-1 d-block" th:data-id="${record.id}">
+                                    <i class="fa fa-bell"></i> 提醒
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="mt-4" th:if="${totalPages > 1}">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled' : ''">
+                            <a class="page-link" th:href="@{/borrow/overdue(page=${currentPage - 1})}">上一页</a>
+                        </li>
+                        <li th:each="pageNumber : ${#numbers.sequence(1, totalPages)}" 
+                            class="page-item" 
+                            th:classappend="${pageNumber == currentPage} ? 'active' : ''">
+                            <a class="page-link" 
+                               th:href="@{/borrow/overdue(page=${pageNumber})}" 
+                               th:text="${pageNumber}"></a>
+                        </li>
+                        <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled' : ''">
+                            <a class="page-link" th:href="@{/borrow/overdue(page=${currentPage + 1})}">下一页</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+            
+            <div class="text-center mt-3 text-muted" th:if="${records.empty}">
+                <i class="fa fa-check-circle text-success"></i> 暂无逾期记录
+            </div>
+        </div>
+    </div>
+    
+    <!-- 处理建议 -->
+    <div class="card mt-4">
+        <div class="card-header bg-warning text-white">
+            <h5 class="mb-0"><i class="fa fa-lightbulb-o"></i> 处理建议</h5>
+        </div>
+        <div class="card-body">
+            <ul class="list-disc ml-5">
+                <li>及时联系逾期用户，提醒归还图书</li>
+                <li>对长期逾期用户可暂停其借阅权限</li>
+                <li>定期清理逾期记录，确保系统数据准确性</li>
+                <li>考虑设置逾期提醒自动通知功能</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 发送通知按钮
+        document.getElementById('notifyBtn').addEventListener('click', function() {
+            if (confirm('确定要发送通知给所有逾期用户吗？')) {
+                alert('通知已发送（模拟）');
+            }
+        });
+        
+        // 单个提醒按钮
+        document.querySelectorAll('button[data-id]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const recordId = this.getAttribute('data-id');
+                if (confirm('确定要发送提醒给该用户吗？')) {
+                    alert(`提醒已发送给相关用户（记录ID: ${recordId}）`);
+                }
+            });
+        });
+    });
+</script>
+
+<style>
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #dc3545;
+    }
+    
+    .stat-label {
+        color: #666;
+        margin-top: 5px;
+    }
+</style>
+</body>
+</html>

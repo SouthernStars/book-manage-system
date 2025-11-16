@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{fragments/layout}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加图书 - 图书管理系统</title>
+    <style>
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .image-preview {
+            max-width: 200px;
+            max-height: 250px;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+        .btn-container {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="container-fluid">
+            <h1 class="mb-4">添加新图书</h1>
+            
+            <div class="form-container">
+                <form th:action="@{/books/add}" th:object="${book}" method="post" enctype="multipart/form-data">
+                    <!-- 错误消息显示 -->
+                    <div th:if="${#fields.hasErrors('global')}" class="alert alert-danger mb-3">
+                        <ul>
+                            <li th:each="error : ${#fields.errors('global')}" th:text="${error}">错误信息</li>
+                        </ul>
+                    </div>
+                    <div class="row">
+                        <!-- 左侧信息 -->
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="title" class="form-label required">书名</label>
+                                <input type="text" id="title" name="title" class="form-control" th:field="*{title}" required>
+                                <div class="invalid-feedback">请输入书名</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="author" class="form-label required">作者</label>
+                                <input type="text" id="author" name="author" class="form-control" th:field="*{author}" required>
+                                <div class="invalid-feedback">请输入作者</div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="isbn" class="form-label required">ISBN</label>
+                                    <input type="text" id="isbn" name="isbn" class="form-control" th:field="*{isbn}" required>
+                                    <div class="invalid-feedback">请输入ISBN</div>
+                                </div>
+                                
+                                <div class="form-group col-md-6">
+                                    <label for="categoryIds" class="form-label required">分类</label>
+                                    <select id="categoryIds" name="categoryIds" class="form-control" required multiple size="4">
+                                        <option th:each="category : ${categories}" th:value="${category.id}" th:text="${category.name}"></option>
+                                    </select>
+                                    <small class="form-text text-muted">按住Ctrl键可选择多个分类</small>
+                                    <div class="invalid-feedback">请选择分类</div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="price" class="form-label required">价格</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">¥</span>
+                                        </div>
+                                        <input type="number" id="price" name="price" class="form-control" step="0.01" min="0" th:field="*{price}" required>
+                                    </div>
+                                    <div class="invalid-feedback">请输入有效的价格</div>
+                                </div>
+                                
+                                <div class="form-group col-md-4">
+                                    <label for="publishDate" class="form-label">出版日期</label>
+                                    <input type="date" id="publishDate" name="publishDate" class="form-control" th:field="*{publishDate}">
+                                    <div class="invalid-feedback">请选择有效的出版日期</div>
+                                </div>
+                            
+                            <div class="form-group">
+                                <label for="publisher" class="form-label">出版社</label>
+                                <input type="text" id="publisher" name="publisher" class="form-control" th:field="*{publisher}">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="description" class="form-label">简介</label>
+                                <textarea id="description" name="description" class="form-control" rows="4" th:field="*{description}" placeholder="输入图书简介信息..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- 右侧信息 -->
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="image" class="form-label">封面图片</label>
+                                <input type="file" id="coverImageFile" name="coverImageFile" class="form-control-file" accept="image/*">
+                                <small class="form-text text-muted">支持 JPG、PNG、GIF 格式，最大 5MB</small>
+                                <img id="imagePreview" class="image-preview" th:src="@{|${book?.coverImage}|}" onerror="this.src='https://via.placeholder.com/200x250?text=No+Image'">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="location" class="form-label">存放位置</label>
+                                <input type="text" id="location" name="location" class="form-control" th:field="*{location}" placeholder="如：A区1排2层">
+                            </div>
+                            
+
+                            
+
+                            
+                            <div class="form-group">
+                                <label for="totalCopies" class="form-label">总馆藏数</label>
+                                <input type="number" id="totalCopies" name="totalCopies" class="form-control" th:field="*{totalCopies}" min="1" value="1">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="availableCopies" class="form-label">可借数量</label>
+                                <input type="number" id="availableCopies" name="availableCopies" class="form-control" th:field="*{availableCopies}" min="0">
+                            </div>
+                            
+
+                            
+
+                        </div>
+                    </div>
+                    
+                    <div class="btn-container">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fa fa-save"></i> 保存
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                            <i class="fa fa-arrow-left"></i> 返回
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 图片预览功能
+            const imageInput = document.getElementById('coverImageFile');
+            const imagePreview = document.getElementById('imagePreview');
+            
+            imageInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        imagePreview.src = e.target.result;
+                    }
+                    
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+            
+            // 表单验证
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function(event) {
+                let isValid = true;
+                const requiredFields = form.querySelectorAll('[required]');
+                
+                requiredFields.forEach(field => {
+                    if (!field.value.trim()) {
+                        isValid = false;
+                        field.classList.add('is-invalid');
+                    } else {
+                        field.classList.remove('is-invalid');
+                    }
+                });
+                
+                if (!isValid) {
+                    event.preventDefault();
+                }
+            });
+            
+            // 实时输入验证
+            const priceInput = document.getElementById('price');
+            const totalCopiesInput = document.getElementById('totalCopies');
+            const availableCopiesInput = document.getElementById('availableCopies');
+            
+            [priceInput, totalCopiesInput, availableCopiesInput].forEach(input => {
+                if (input) {
+                    input.addEventListener('input', function() {
+                        if (this.value && (isNaN(this.value) || this.value < parseFloat(this.min))) {
+                            this.classList.add('is-invalid');
+                        } else {
+                            this.classList.remove('is-invalid');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

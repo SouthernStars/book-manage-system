@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图书管理系统 - 首页</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 0;
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .hero-section h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .hero-section p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+        .feature-card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            padding: 30px;
+            text-align: center;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #0d6efd;
+        }
+        .feature-card h3 {
+            margin-bottom: 15px;
+            color: #495057;
+        }
+        .recent-books {
+            margin-top: 50px;
+        }
+        .book-card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .book-card .card-body {
+            flex-grow: 1;
+        }
+        .book-cover {
+            height: 250px;
+            object-fit: cover;
+            object-position: center;
+        }
+        .btn-primary {
+            background-color: #0d6efd;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+        }
+        .section-title {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #495057;
+            font-weight: bold;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px 0;
+            margin-top: 50px;
+            border-top: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-md navbar-light bg-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fa fa-book"></i> 图书管理系统
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-item nav-link active" href="/">首页</a>
+                    <a class="nav-item nav-link" href="/books">图书管理</a>
+                    <sec:authorize access="hasRole('USER')">
+                    <a class="nav-item nav-link" href="/borrow/user/borrow">图书借阅</a>
+                    <a class="nav-item nav-link" href="/borrow/my-records">我的借阅</a>
+                    </sec:authorize>
+                    <a class="nav-item nav-link" sec:authorize="hasRole('USER')" href="/borrow/my-records">我的借阅</a>
+                    <span class="nav-item nav-link" sec:authorize="isAuthenticated()">
+                        欢迎, <span sec:authentication="name"></span>
+                    </span>
+                    <a class="nav-item nav-link" href="/login" sec:authorize="!isAuthenticated()">登录</a>
+                    <form th:action="@{/logout}" method="post" sec:authorize="isAuthenticated()" class="d-inline">
+                        <button type="submit" class="btn btn-link nav-link" style="border: none; background: none;">
+                            退出
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 英雄区域 -->
+    <section class="hero-section">
+        <div class="container">
+            <h1>欢迎使用图书管理系统</h1>
+            <p>高效、便捷的图书管理解决方案</p>
+            <div>
+                <a href="/books" class="btn btn-light btn-lg">
+                    <i class="fa fa-search"></i> 浏览图书
+                </a>
+                <a href="/login" class="btn btn-outline-light btn-lg ms-3">
+                    <i class="fa fa-sign-in"></i> 管理员登录
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 功能特点 -->
+    <section class="container">
+        <h2 class="section-title">系统功能</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa fa-book"></i>
+                    </div>
+                    <h3>图书管理</h3>
+                    <p>方便快捷地添加、编辑、删除和查询图书信息，支持多条件搜索。</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa fa-exchange"></i>
+                    </div>
+                    <h3>借阅管理</h3>
+                    <p>高效处理图书借阅和归还流程，自动计算逾期费用。</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa fa-users"></i>
+                    </div>
+                    <h3>用户管理</h3>
+                    <p>管理用户账号和权限，查看用户借阅记录。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 最近上架图书 -->
+    <section class="container recent-books">
+        <h2 class="section-title">最近上架图书</h2>
+        <div class="row">
+            <div class="col-md-3" th:each="book : ${recentBooks}">
+                <div class="card book-card">
+                    <img th:src="@{|/images/books/${book.imagePath}|}" onerror="this.src='https://via.placeholder.com/300x400?text=No+Image'" class="card-img-top book-cover" th:alt="${book.title}">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${book.title}">图书标题</h5>
+                        <p class="card-text text-muted" th:text="${book.author}">作者</p>
+                        <p class="card-text text-sm" th:text="${book.category.name}">分类</p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="#" class="btn btn-primary w-100">查看详情</a>
+                    </div>
+                </div>
+            </div>
+            <!-- 默认展示的图书卡片 -->
+            <div class="col-md-3">
+                <div class="card book-card">
+                    <img src="https://via.placeholder.com/300x400?text=Java+编程思想" class="card-img-top book-cover" alt="Java编程思想">
+                    <div class="card-body">
+                        <h5 class="card-title">Java编程思想</h5>
+                        <p class="card-text text-muted">Bruce Eckel</p>
+                        <p class="card-text text-sm">计算机科学</p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="#" class="btn btn-primary w-100">查看详情</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card book-card">
+                    <img src="https://via.placeholder.com/300x400?text=Spring+实战" class="card-img-top book-cover" alt="Spring实战">
+                    <div class="card-body">
+                        <h5 class="card-title">Spring实战</h5>
+                        <p class="card-text text-muted">Craig Walls</p>
+                        <p class="card-text text-sm">计算机科学</p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="#" class="btn btn-primary w-100">查看详情</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="text-center">
+                <p>&copy; <span th:text="${#dates.year(#dates.createNow())}"></span> 图书管理系统 - 版权所有</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

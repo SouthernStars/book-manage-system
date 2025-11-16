@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{fragments/layout}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑图书 - 图书管理系统</title>
+    <style>
+        .book-cover-preview {
+            max-width: 200px;
+            border-radius: 8px;
+        }
+        .form-label.required:after {
+            content: " *";
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/books}">图书列表</a></li>
+                <li class="breadcrumb-item"><a th:href="@{|/books/view/${book.id}|}">图书详情</a></li>
+                <li class="breadcrumb-item active">编辑图书</li>
+            </ol>
+        </nav>
+
+        <h1 class="mb-4">编辑图书</h1>
+
+        <!-- 成功消息 -->
+        <div th:if="${successMessage}" class="alert alert-success">
+            <i class="fa fa-check-circle"></i> <span th:text="${successMessage}">操作成功！</span>
+        </div>
+
+        <!-- 错误消息 -->
+        <div th:if="${errorMessage}" class="alert alert-danger">
+            <i class="fa fa-exclamation-circle"></i> <span th:text="${errorMessage}">操作失败，请重试。</span>
+        </div>
+
+        <!-- 修复：添加 th:object 属性 -->
+        <form th:object="${book}" th:action="@{|/books/update/${book.id}|}" method="post" enctype="multipart/form-data">
+            <!-- 全局错误消息 - 现在在正确的上下文中 -->
+            <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger">
+                <h5>请修正以下错误：</h5>
+                <ul>
+                    <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
+                </ul>
+            </div>
+
+            <div class="row">
+                <!-- 左侧：基本信息 -->
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">基本信息</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="title" class="form-label required">书名</label>
+                                        <input type="text" id="title" th:field="*{title}" class="form-control" required>
+                                        <div th:if="${#fields.hasErrors('title')}" class="text-danger">
+                                            <small th:each="err : ${#fields.errors('title')}" th:text="${err}"></small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="author" class="form-label">作者</label>
+                                        <input type="text" id="author" th:field="*{author}" class="form-control">
+                                        <div th:if="${#fields.hasErrors('author')}" class="text-danger">
+                                            <small th:each="err : ${#fields.errors('author')}" th:text="${err}"></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="isbn" class="form-label">ISBN</label>
+                                        <input type="text" id="isbn" th:field="*{isbn}" class="form-control">
+                                        <div th:if="${#fields.hasErrors('isbn')}" class="text-danger">
+                                            <small th:each="err : ${#fields.errors('isbn')}" th:text="${err}"></small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="publisher" class="form-label">出版社</label>
+                                        <input type="text" id="publisher" th:field="*{publisher}" class="form-control">
+                                        <div th:if="${#fields.hasErrors('publisher')}" class="text-danger">
+                                            <small th:each="err : ${#fields.errors('publisher')}" th:text="${err}"></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 其他表单字段... -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧：其他信息 -->
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">其他信息</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- 其他表单字段... -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-save"></i> 保存修改
+                </button>
+                <a th:href="@{|/books/view/${book.id}|}" class="btn btn-secondary">
+                    <i class="fa fa-times"></i> 取消
+                </a>
+                <a th:href="@{/books}" class="btn btn-outline-secondary">
+                    <i class="fa fa-arrow-left"></i> 返回列表
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

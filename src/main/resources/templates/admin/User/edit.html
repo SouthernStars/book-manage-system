@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{fragments/layout}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑用户 - 图书管理系统</title>
+    <style>
+        .card {
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .password-strength {
+            margin-top: 5px;
+            height: 5px;
+            width: 100%;
+            background-color: #eee;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .password-strength-bar {
+            height: 100%;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+        .strength-weak {
+            width: 33%;
+            background-color: #dc3545;
+        }
+        .strength-medium {
+            width: 66%;
+            background-color: #ffc107;
+        }
+        .strength-strong {
+            width: 100%;
+            background-color: #28a745;
+        }
+        .info-card {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0d6efd;
+        }
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .required::after {
+            content: " *";
+            color: #dc3545;
+        }
+        .list-disc {
+            list-style-type: disc;
+        }
+        .ml-5 {
+            margin-left: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+        <h1 class="mb-4">编辑用户</h1>
+
+        <!-- 消息提示 -->
+        <div th:if="${successMessage}" class="alert alert-success">
+            <i class="fa fa-check-circle"></i> <span th:text="${successMessage}">操作成功！</span>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger">
+            <i class="fa fa-exclamation-circle"></i> <span th:text="${errorMessage}">操作失败，请重试。</span>
+        </div>
+
+        <!-- 用户信息卡片 -->
+        <div class="card info-card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>用户ID：</strong><span th:text="${user.id}">1</span></p>
+                        <p><strong>用户名：</strong><span th:text="${user.username}">admin</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>当前状态：</strong>
+                            <span class="badge" th:classappend="${user.enabled} ? 'bg-success' : 'bg-danger'"
+                                  th:text="${user.enabled} ? '已启用' : '已禁用'">已启用</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 编辑表单 -->
+        <div class="card">
+            <div class="card-body">
+                <form th:action="@{/admin/users/edit/{id}(id=${user.id})}" method="post">
+                    <div class="row">
+                        <!-- 左侧信息 -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="username" class="form-label">用户名</label>
+                                <input type="text" id="username" name="username" class="form-control"
+                                       th:value="${user.username}" readonly>
+                                <small class="form-text text-muted">用户名不可修改</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="password" class="form-label">密码</label>
+                                <input type="password" id="password" name="password" class="form-control"
+                                       placeholder="留空表示不修改密码">
+                                <div class="password-strength">
+                                    <div id="passwordStrengthBar" class="password-strength-bar" style="width: 0%"></div>
+                                </div>
+                                <small class="form-text text-muted">密码长度至少8位，包含字母和数字</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="confirmPassword" class="form-label">确认密码</label>
+                                <input type="password" id="confirmPassword" name="confirmPassword" class="form-control"
+                                       placeholder="再次输入密码">
+                                <div id="passwordMatchError" class="invalid-feedback" style="display: none;">
+                                    两次输入的密码不一致
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="fullName" class="form-label required">姓名</label>
+                                <input type="text" id="fullName" name="fullName" class="form-control"
+                                       th:value="${user.fullName}" required>
+                                <div class="invalid-feedback">请输入姓名</div>
+                            </div>
+                        </div>
+
+                        <!-- 右侧信息 -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="email" class="form-label">邮箱</label>
+                                <input type="email" id="email" name="email" class="form-control"
+                                       th:value="${user.email}" placeholder="user@example.com">
+                                <div class="invalid-feedback">请输入有效的邮箱地址</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="phone" class="form-label">电话</label>
+                                <input type="tel" id="phone" name="phone" class="form-control"
+                                       th:value="${user.phone}" placeholder="13800138000">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="role" class="form-label required">角色</label>
+                                <select id="role" name="role" class="form-control" required>
+                                    <option value="">请选择角色</option>
+                                    <option th:each="r : ${roles}"
+                                            th:value="${r}"
+                                            th:selected="${r == userRole}"
+                                            th:text="${r == 'ADMIN' ? '管理员' : '普通用户'}">
+                                        普通用户
+                                    </option>
+                                </select>
+                                <div class="invalid-feedback">请选择角色</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">账号状态</label>
+                                <div class="form-check">
+                                    <input type="checkbox" id="enabled" name="enabled" class="form-check-input"
+                                           th:checked="${user.enabled}">
+                                    <label for="enabled" class="form-check-label">启用账号</label>
+                                </div>
+                                <small class="form-text text-muted">禁用账号将阻止用户登录系统</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="btn-container">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-save"></i> 保存修改
+                        </button>
+                        <a th:href="@{/admin/users}" class="btn btn-secondary">
+                            <i class="fa fa-arrow-left"></i> 返回列表
+                        </a>
+                        <button type="button" class="btn btn-danger ml-auto" onclick="deleteUser()">
+                            <i class="fa fa-trash"></i> 删除用户
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 权限说明 -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">用户权限说明</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>管理员 (ADMIN)：</strong>
+                    <ul class="list-disc ml-5">
+                        <li>管理所有用户账号</li>
+                        <li>管理所有图书信息</li>
+                        <li>查看和管理借阅记录</li>
+                        <li>导出系统数据</li>
+                    </ul>
+                </div>
+                <div>
+                    <strong>普通用户 (USER)：</strong>
+                    <ul class="list-disc ml-5">
+                        <li>浏览图书列表</li>
+                        <li>借阅和归还图书</li>
+                        <li>查看个人借阅记录</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 注意事项 -->
+        <div class="card mt-4">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0">注意事项</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-disc ml-5">
+                    <li>修改用户角色会影响其系统权限</li>
+                    <li>禁用用户不会删除其借阅记录</li>
+                    <li>修改密码时请确保密码安全性</li>
+                    <li>用户名创建后不可修改</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 密码强度检查
+        const passwordInput = document.getElementById('password');
+        const passwordStrengthBar = document.getElementById('passwordStrengthBar');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const passwordMatchError = document.getElementById('passwordMatchError');
+        const form = document.querySelector('form');
+
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+
+            // 如果密码为空，重置强度条
+            if (!password) {
+                passwordStrengthBar.style.width = '0%';
+                passwordStrengthBar.style.backgroundColor = '';
+                return;
+            }
+
+            let strength = 0;
+            let color = '#dc3545';
+
+            // 长度检查
+            if (password.length >= 8) strength += 1;
+            // 包含小写字母
+            if (/[a-z]/.test(password)) strength += 1;
+            // 包含大写字母
+            if (/[A-Z]/.test(password)) strength += 1;
+            // 包含数字
+            if (/[0-9]/.test(password)) strength += 1;
+            // 包含特殊字符
+            if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+
+            // 设置强度条
+            const width = (strength / 5) * 100;
+            passwordStrengthBar.style.width = width + '%';
+
+            // 设置颜色
+            if (width >= 80) color = '#28a745'; // 强 - 绿色
+            else if (width >= 60) color = '#17a2b8'; // 中强 - 青色
+            else if (width >= 40) color = '#ffc107'; // 中 - 黄色
+            else if (width >= 20) color = '#fd7e14'; // 弱 - 橙色
+
+            passwordStrengthBar.style.backgroundColor = color;
+
+            // 检查密码匹配
+            checkPasswordMatch();
+        });
+
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+        function checkPasswordMatch() {
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+
+            // 如果两个字段都为空，不显示错误
+            if (!password && !confirmPassword) {
+                confirmPasswordInput.classList.remove('is-invalid');
+                passwordMatchError.style.display = 'none';
+                return;
+            }
+
+            // 如果一个为空一个不为空，或者两个都不为空但不匹配，显示错误
+            if ((password && !confirmPassword) || (!password && confirmPassword) || (password && confirmPassword && password !== confirmPassword)) {
+                confirmPasswordInput.classList.add('is-invalid');
+                passwordMatchError.style.display = 'block';
+            } else {
+                confirmPasswordInput.classList.remove('is-invalid');
+                passwordMatchError.style.display = 'none';
+            }
+        }
+
+        // 表单验证
+        form.addEventListener('submit', function(event) {
+            let isValid = true;
+            const requiredFields = form.querySelectorAll('[required]');
+
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.classList.add('is-invalid');
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+
+            // 密码匹配验证（只有在两个字段都不为空时验证）
+            if (passwordInput.value && confirmPasswordInput.value && passwordInput.value !== confirmPasswordInput.value) {
+                isValid = false;
+                confirmPasswordInput.classList.add('is-invalid');
+                passwordMatchError.style.display = 'block';
+            }
+
+            // 密码强度验证（只有在密码字段不为空时验证）
+            if (passwordInput.value && (passwordInput.value.length < 8 || !/[a-z]/.test(passwordInput.value) || !/[0-9]/.test(passwordInput.value))) {
+                isValid = false;
+                passwordInput.classList.add('is-invalid');
+            }
+
+            // 邮箱格式验证
+            const emailInput = document.getElementById('email');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (emailInput.value && !emailRegex.test(emailInput.value)) {
+                isValid = false;
+                emailInput.classList.add('is-invalid');
+            }
+
+            if (!isValid) {
+                event.preventDefault();
+                alert('请检查表单中的错误信息');
+            }
+        });
+
+        // 实时邮箱验证
+        const emailInput = document.getElementById('email');
+        emailInput.addEventListener('input', function() {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (this.value && !emailRegex.test(this.value)) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+    });
+
+    // 删除用户函数
+    function deleteUser() {
+        if (confirm('确定要删除该用户吗？此操作不可撤销。删除用户可能会影响相关的借阅记录。')) {
+            const userId = [[${user.id}]];
+            window.location.href = '/admin/users/delete/' + userId;
+        }
+    }
+</script>
+</body>
+</html>

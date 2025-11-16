@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{fragments/layout}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理仪表盘 - 图书管理系统</title>
+    <style>
+        .dashboard-card {
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+        .card-icon {
+            font-size: 2.5rem;
+            opacity: 0.8;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .recent-activities {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .activity-item {
+            padding: 15px 0;
+            border-bottom: 1px solid #f1f3f5;
+        }
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 1.2rem;
+        }
+        .activity-content {
+            margin-left: 15px;
+        }
+        .activity-time {
+            color: #9ca3af;
+            font-size: 0.85rem;
+        }
+        .quick-stats {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="container-fluid">
+            <h1 class="mb-4">管理仪表盘</h1>
+            
+            <!-- 欢迎信息 -->
+            <div class="mb-5">
+                <h2>欢迎回来，<span th:text="${#authentication.name}">管理员</span>！</h2>
+                <p class="text-muted">今天是 <span th:text="${#dates.format(#dates.createNow(), 'yyyy年MM月dd日')}">2023年12月25日</span>，星期四</p>
+            </div>
+            
+            <!-- 统计卡片 -->
+            <div class="row mb-5">
+                <div class="col-md-3">
+                    <div class="dashboard-card bg-primary text-white p-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="stat-value" th:text="${totalBooks}">1000</div>
+                                <div class="stat-label">总图书数量</div>
+                            </div>
+                            <div class="card-icon">
+                                <i class="fa fa-book"></i>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-sm opacity-80">
+                            <i class="fa fa-arrow-up text-success"></i> 较上月增长 5%
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="dashboard-card bg-success text-white p-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="stat-value" th:text="${availableBooks}">850</div>
+                                <div class="stat-label">可借阅图书</div>
+                            </div>
+                            <div class="card-icon">
+                                <i class="fa fa-check-circle"></i>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-sm opacity-80">
+                            占总数的 <span th:text="${#numbers.formatDecimal(availableBooks * 100.0 / totalBooks, 0, 1)}">85.0</span>%
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="dashboard-card bg-warning text-white p-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="stat-value" th:text="${totalUsers}">500</div>
+                                <div class="stat-label">注册用户数</div>
+                            </div>
+                            <div class="card-icon">
+                                <i class="fa fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-sm opacity-80">
+                            <i class="fa fa-arrow-up text-success"></i> 本月新增 25 人
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="dashboard-card bg-info text-white p-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="stat-value" th:text="${activeBorrows}">120</div>
+                                <div class="stat-label">当前借阅</div>
+                            </div>
+                            <div class="card-icon">
+                                <i class="fa fa-exchange-alt"></i>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-sm opacity-80">
+                            活跃借阅率 <span th:text="${#numbers.formatDecimal(activeBorrows * 100.0 / totalUsers, 0, 1)}">24.0</span>%
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 警告提示 -->
+            <div th:if="${overdueRecords > 0}" class="alert alert-danger mb-5">
+                <i class="fa fa-exclamation-triangle"></i> 系统中有 <strong th:text="${overdueRecords}">15</strong> 条逾期未还的借阅记录，请及时处理！
+                <a href="/admin/borrow/overdue" class="btn btn-outline-light btn-sm ml-3">查看详情</a>
+            </div>
+            
+            <!-- 主要内容区 -->
+            <div class="row">
+                <!-- 左侧：最近活动 -->
+                <div class="col-md-6 mb-5">
+                    <div class="recent-activities">
+                        <div class="card-header bg-light p-3">
+                            <h5 class="mb-0">最近活动</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="activity-item px-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="activity-icon bg-primary text-white">
+                                        <i class="fa fa-user-plus"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div>用户 <strong>zhangsan</strong> 注册了新账号</div>
+                                        <div class="activity-time">今天 09:30</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="activity-item px-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="activity-icon bg-success text-white">
+                                        <i class="fa fa-book"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div>管理员添加了新图书 <strong>《Spring Boot实战》</strong></div>
+                                        <div class="activity-time">今天 10:15</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="activity-item px-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="activity-icon bg-warning text-white">
+                                        <i class="fa fa-exchange-alt"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div>用户 <strong>lisi</strong> 借阅了 《Java编程思想》</div>
+                                        <div class="activity-time">昨天 14:20</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="activity-item px-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="activity-icon bg-info text-white">
+                                        <i class="fa fa-undo"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div>用户 <strong>wangwu</strong> 归还了 《数据库原理》</div>
+                                        <div class="activity-time">昨天 16:45</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="activity-item px-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="activity-icon bg-danger text-white">
+                                        <i class="fa fa-exclamation-circle"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div>用户 <strong>zhaoliu</strong> 的借阅 《设计模式》 已逾期</div>
+                                        <div class="activity-time">前天 12:00</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light text-center p-3">
+                            <a href="/admin/activities" class="text-primary">查看全部活动</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 右侧：快速统计和提醒 -->
+                <div class="col-md-6 mb-5">
+                    <!-- 快速统计 -->
+                    <div class="quick-stats mb-4">
+                        <h5 class="mb-3">系统统计</h5>
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <div class="text-center">
+                                    <div class="stat-value text-primary" th:text="${overdueRecords}">15</div>
+                                    <div class="stat-label">逾期记录</div>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="text-center">
+                                    <div class="stat-value text-success">28</div>
+                                    <div class="stat-label">今日借阅</div>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="text-center">
+                                    <div class="stat-value text-warning">42</div>
+                                    <div class="stat-label">今日归还</div>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="text-center">
+                                    <div class="stat-value text-info">35</div>
+                                    <div class="stat-label">待审核借阅</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 热门图书 -->
+                    <div class="recent-activities">
+                        <div class="card-header bg-light p-3">
+                            <h5 class="mb-0">热门借阅图书</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>排名</th>
+                                        <th>图书名称</th>
+                                        <th>借阅次数</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>《Java编程思想》</td>
+                                        <td class="text-primary">128</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>《Spring Boot实战》</td>
+                                        <td class="text-primary">105</td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>《设计模式》</td>
+                                        <td class="text-primary">92</td>
+                                    </tr>
+                                    <tr>
+                                        <td>4</td>
+                                        <td>《数据库系统概论》</td>
+                                        <td class="text-primary">86</td>
+                                    </tr>
+                                    <tr>
+                                        <td>5</td>
+                                        <td>《计算机网络》</td>
+                                        <td class="text-primary">78</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 仪表盘初始化脚本
+            console.log('仪表盘加载完成');
+            
+            // 这里可以添加图表初始化代码，如使用Chart.js
+            // 例如：初始化借阅趋势图等
+        });
+    </script>
+</body>
+</html>

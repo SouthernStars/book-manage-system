@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{fragments/layout}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图书借阅 - 图书管理系统</title>
+    <style>
+        .search-form {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .action-buttons .btn {
+            margin-right: 5px;
+        }
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+        .stat-card {
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content" class="container-fluid">
+    <div class="mb-4">
+        <h2>图书借阅</h2>
+    </div>
+    
+    <!-- 消息提示 -->
+    <div th:if="${successMessage}" class="alert alert-success">
+        <i class="fa fa-check-circle"></i> <span th:text="${successMessage}">操作成功！</span>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger">
+        <i class="fa fa-exclamation-circle"></i> <span th:text="${errorMessage}">操作失败，请重试。</span>
+    </div>
+    
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">借阅信息</h4>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/borrow/borrow}" method="post" id="borrowForm">
+                        <div class="form-group">
+                            <label for="userId">用户信息 <span class="text-danger">*</span></label>
+                            <!-- 普通用户自动填充当前用户信息 -->
+                            <div sec:authorize="hasRole('USER')">
+                                <input type="hidden" id="userId" name="userId" th:value="${currentUser.id}">
+                                <div class="form-control bg-light p-2">
+                                    <strong th:text="${currentUser.username}"></strong> - 
+                                    <span th:text="${currentUser.fullName}"></span>
+                                </div>
+                            </div>
+                            <!-- 管理员可以选择用户 -->
+                            <div sec:authorize="hasRole('ADMIN')">
+                                <select id="userId" name="userId" class="form-control" required>
+                                    <option value="" disabled selected>请选择用户</option>
+                                    <option th:each="user : ${users}" 
+                                            th:value="${user.id}" 
+                                            th:text="${user.username + ' - ' + user.fullName}"
+                                            th:selected="${param.userId == user.id}"></option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="bookId">图书信息 <span class="text-danger">*</span></label>
+                            <!-- 如果有传入bookId参数，则自动选择并显示图书信息 -->
+                            <div th:if="${param.bookId}">
+                                <input type="hidden" id="bookId" name="bookId" th:value="${param.bookId}">
+                                <div class="form-control bg-light p-2">
+                                    <span th:each="book : ${books}" th:if="${book.id == param.bookId}">
+                                        <strong th:text="${book.title}"></strong> - 
+                                        <span th:text="${book.author}"></span>
+                                    </span>
+                                </div>
+                            </div>
+                            <!-- 否则显示选择框 -->
+                            <div th:unless="${param.bookId}">
+                                <select id="bookId" name="bookId" class="form-control" required>
+                                    <option value="" disabled selected>请选择图书</option>
+                                    <option th:each="book : ${books}" 
+                                            th:value="${book.id}" 
+                                            th:text="${book.title + ' (' + book.author + ')'}"></option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="days">借阅天数 <span class="text-danger">*</span></label>
+                            <input type="number" id="days" name="days" min="1" max="30" value="14" 
+                                   class="form-control" required>
+                            <small class="form-text text-muted mt-1">
+                                借阅天数范围：1-30天，默认14天
+                            </small>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fa fa-check-circle"></i> 确认借阅
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 借阅须知 -->
+    <div class="card mt-5">
+        <div class="card-header bg-warning text-white">
+            <h5 class="mb-0"><i class="fa fa-info-circle"></i> 借阅须知</h5>
+        </div>
+        <div class="card-body">
+            <ul class="list-disc ml-5">
+                <li>请确保用户和图书信息准确无误</li>
+                <li>系统默认为14天借阅期，可根据实际情况调整</li>
+                <li>逾期将按每天0.5元收取罚款</li>
+                <li>每本书最多可续借一次，续期为14天</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- 近期借阅记录 -->
+    <div class="mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="mb-0">近期借阅记录</h3>
+            <div>
+                <span class="text-muted">共 <strong th:text="${recentRecords.size()}">5</strong> 条记录</span>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="thead-light">
+                    <tr>
+                        <th>用户姓名</th>
+                        <th>图书标题</th>
+                        <th>借阅日期</th>
+                        <th>应还日期</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="record : ${recentRecords}">
+                        <td th:text="${record.user.fullName}"></td>
+                        <td th:text="${record.book.title}"></td>
+                        <td th:text="${#temporals.format(record.borrowDate, 'yyyy-MM-dd')}"></td>
+                        <td th:text="${#temporals.format(record.dueDate, 'yyyy-MM-dd')}"></td>
+                        <td>
+                            <span th:switch="${record.status}">
+                                <span th:case="'ACTIVE'" class="status-badge bg-primary text-white">借阅中</span>
+                                <span th:case="'OVERDUE'" class="status-badge bg-danger text-white">已逾期</span>
+                                <span th:case="'RETURNED'" class="status-badge bg-success text-white">已归还</span>
+                                <span th:case="*" class="status-badge bg-secondary text-white" th:text="${record.status}"></span>
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="text-right mt-3">
+            <a href="/borrow/records" class="btn btn-primary">
+                <i class="fa fa-list"></i> 查看全部借阅记录
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 表单验证
+        const borrowForm = document.getElementById('borrowForm');
+        
+        borrowForm.addEventListener('submit', function(event) {
+            const days = document.getElementById('days').value;
+            
+            if (days < 1 || days > 30) {
+                alert('借阅天数必须在1-30天之间');
+                event.preventDefault();
+                return;
+            }
+            
+            // 确认对话框
+            if (!confirm('确定要为所选用户借阅这本书吗？')) {
+                event.preventDefault();
+            }
+        });
+    });
+</script>
+</body>
+</html>

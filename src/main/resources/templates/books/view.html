@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{fragments/layout}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图书详情 - 图书管理系统</title>
+    <style>
+        .book-detail {
+            margin-top: 20px;
+        }
+        .book-cover {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .book-info {
+            padding: 20px;
+        }
+        .book-status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+        .status-available {
+            background-color: #d1e7dd;
+            color: #0f5132;
+        }
+        .status-unavailable {
+            background-color: #f8d7da;
+            color: #842029;
+        }
+        .category-badge {
+            display: inline-block;
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        .action-buttons {
+            margin-top: 20px;
+        }
+        .action-buttons .btn {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="container-fluid">
+            <h1 class="mb-4">图书详情</h1>
+            
+            <div class="book-detail">
+                <div class="row">
+                    <!-- 图书封面 -->
+                    <div class="col-md-3">
+                        <img th:src="@{|${book.coverImage}|}" onerror="this.src='https://via.placeholder.com/300x400?text=No+Image'" class="book-cover" alt="图书封面">
+                    </div>
+                    
+                    <!-- 图书信息 -->
+                    <div class="col-md-9">
+                        <div class="book-info">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h2 th:text="${book.title}">图书标题</h2>
+                                    <p class="text-muted" th:text="${book.author}">作者</p>
+                                </div>
+                                <span class="book-status" th:classappend="${book.availableCopies > 0 ? 'status-available' : 'status-unavailable'}">
+                                    <i th:class="${book.availableCopies > 0 ? 'fa fa-check-circle' : 'fa fa-times-circle'}"></i>
+                                    <span th:text="${book.availableCopies > 0 ? '可借阅' : '不可借阅'}"></span>
+                                </span>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>ISBN:</strong> <span th:text="${book.isbn}">ISBN-13</span></p>
+                                        <p><strong>出版社:</strong> <span th:text="${book.publisher}">出版社名称</span></p>
+                                        <p><strong>出版日期:</strong> <span th:text="${book.publishDate}">2023-01-01</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>总数量:</strong> <span th:text="${book.totalCopies}">10</span></p>
+                                        <p><strong>可借数量:</strong> <span th:text="${book.availableCopies}">8</span></p>
+                                        <p><strong>价格:</strong> ¥<span th:text="${book.price}">99.00</span></p>
+                                </div>
+                            </div>
+                            
+                            <!-- 操作按钮 -->
+                            <div class="action-buttons">
+                                <a th:href="@{/books}" class="btn btn-secondary">
+                                    <i class="fa fa-arrow-left"></i> 返回列表
+                                </a>
+                                <!-- 普通用户可见的借阅按钮 -->
+                                <div sec:authorize="hasRole('USER')" th:if="${book.availableCopies > 0}">
+                                    <a th:href="@{|/borrow/borrow?bookId=${book.id}|}" class="btn btn-success ml-2">
+                                        <i class="fa fa-hand-lizard-o"></i> 借阅图书
+                                    </a>
+                                </div>
+                                <!-- 管理员可见的编辑和删除按钮 -->
+                                <div sec:authorize="hasRole('ADMIN')">
+                                    <a th:href="@{|/books/edit/${book.id}|}" class="btn btn-primary ml-2">
+                                        <i class="fa fa-edit"></i> 编辑图书
+                                    </a>
+                                    <button th:attr="data-book-id=${book.id}" class="btn btn-danger delete-btn ml-2">
+                                        <i class="fa fa-trash"></i> 删除图书
+                                    </button>
+                                </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <p><strong>分类:</strong></p>
+                                <div>
+                                    <span th:each="category, iter : ${book.categories}" class="category-badge">
+                                        <span th:text="${category.name}">分类名</span>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <p><strong>简介:</strong></p>
+                                <p th:text="${book.description}" class="text-muted">图书简介内容...</p>
+                            </div>
+                            
+                            <div class="action-buttons mt-4">
+                                <a th:href="@{|/books/edit/${book.id}|}" class="btn btn-primary">
+                                    <i class="fa fa-edit"></i> 编辑
+                                </a>
+                                <button th:attr="data-book-id=${book.id}" class="btn btn-danger delete-btn">
+                                    <i class="fa fa-trash"></i> 删除
+                                </button>
+                                <a href="/books" class="btn btn-secondary">
+                                    <i class="fa fa-arrow-left"></i> 返回列表
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 删除确认
+            const deleteButtons = document.querySelectorAll('.delete-btn');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const bookId = this.getAttribute('data-book-id');
+                    if (confirm('确定要删除这本图书吗？此操作不可撤销。如果有借阅记录关联，可能会影响系统数据完整性。')) {
+                        window.location.href = '/books/delete/' + bookId;
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

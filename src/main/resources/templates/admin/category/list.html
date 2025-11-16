@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{fragments/layout}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分类管理 - 图书管理系统</title>
+    <style>
+        .search-form {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .action-buttons .btn {
+            margin-right: 5px;
+        }
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        .card {
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #4a6fa5;
+            color: white;
+            border-radius: 8px 8px 0 0;
+        }
+        .btn-primary {
+            background-color: #4a6fa5;
+            border-color: #4a6fa5;
+        }
+        .btn-primary:hover {
+            background-color: #3a5a85;
+            border-color: #3a5a85;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        .action-buttons .btn {
+            margin-right: 5px;
+        }
+        .alert {
+            margin-bottom: 20px;
+        }
+        .modal-header {
+            background-color: #4a6fa5;
+            color: white;
+            border-radius: 6px 6px 0 0;
+        }
+        .form-control:focus {
+            border-color: #4a6fa5;
+            box-shadow: 0 0 0 0.2rem rgba(74, 111, 165, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="container-fluid">
+            <h1 class="mb-4">分类管理</h1>
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">分类管理</h3>
+                <button id="addCategoryBtn" class="btn btn-primary">
+                    <i class="fa fa-plus"></i> 添加分类
+                </button>
+            </div>
+            
+            <div class="card-body">
+                <!-- 消息提示 -->
+                <div th:if="${successMessage}" class="alert alert-success">
+                    <i class="fa fa-check-circle"></i> <span th:text="${successMessage}">操作成功！</span>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger">
+                    <i class="fa fa-exclamation-circle"></i> <span th:text="${errorMessage}">操作失败，请重试。</span>
+                </div>
+                <div th:if="${param.error == 'hasBooks'}" class="alert alert-warning">
+                    <i class="fa fa-exclamation-triangle"></i> 该分类下存在图书，无法删除！
+                </div>
+                
+                <!-- 分类列表 -->
+                <div th:if="${categories.size() > 0}">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>分类名称</th>
+                                <th>描述</th>
+                                <th>图书数量</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="category, iterStat : ${categories}">
+                                <td th:text="${iterStat.index + 1}">序号</td>
+                                <td th:text="${category.name}">分类名称</td>
+                                <td th:text="${category.description}">描述</td>
+                                <td th:text="${category.books != null ? category.books.size() : 0}">0</td>
+                                <td class="action-buttons">
+                                    <button class="btn btn-sm btn-primary edit-btn"
+                                            th:data-id="${category.id}"
+                                            th:data-name="${category.name}"
+                                            th:data-description="${category.description}">
+                                        <i class="fa fa-edit"></i> 编辑
+                                    </button>
+                                    <button class="btn btn-sm btn-danger delete-btn"
+                                            th:data-id="${category.id}"
+                                            th:data-name="${category.name}">
+                                        <i class="fa fa-trash"></i> 删除
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 无数据提示 -->
+                <div th:unless="${categories.size() > 0}" class="alert alert-info text-center">
+                    <i class="fa fa-info-circle"></i> 暂无分类数据，请添加分类。
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加分类模态框 -->
+    <div class="modal fade" id="addCategoryModal" tabindex="-1" role="dialog" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCategoryModalLabel">添加分类</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="addCategoryForm" action="/admin/categories/add" method="post">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="addName" class="font-weight-bold">分类名称 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="addName" name="name" required maxlength="100" placeholder="请输入分类名称">
+                        </div>
+                        <div class="form-group">
+                            <label for="addDescription">描述</label>
+                            <textarea class="form-control" id="addDescription" name="description" rows="3" placeholder="请输入分类描述"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑分类模态框 -->
+    <div class="modal fade" id="editCategoryModal" tabindex="-1" role="dialog" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editCategoryModalLabel">编辑分类</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="editCategoryForm" action="" method="post">
+                    <input type="hidden" id="editId" name="id">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="editName" class="font-weight-bold">分类名称 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="editName" name="name" required maxlength="100" placeholder="请输入分类名称">
+                        </div>
+                        <div class="form-group">
+                            <label for="editDescription">描述</label>
+                            <textarea class="form-control" id="editDescription" name="description" rows="3" placeholder="请输入分类描述"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 确认删除模态框 -->
+    <div class="modal fade" id="deleteCategoryModal" tabindex="-1" role="dialog" aria-labelledby="deleteCategoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteCategoryModalLabel">确认删除</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>确定要删除分类 <span id="deleteCategoryName" class="font-weight-bold"></span> 吗？</p>
+                    <p class="text-warning small">注意：如果该分类下存在图书，将无法删除。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <a id="confirmDeleteBtn" href="" class="btn btn-danger">确认删除</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 处理URL参数，显示成功或错误消息
+        function handleUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const container = document.querySelector('.container-fluid');
+            
+            // 处理成功消息
+            if (urlParams.has('success')) {
+                const successType = urlParams.get('success');
+                let message = '';
+                
+                switch (successType) {
+                    case 'add':
+                        message = '分类添加成功！';
+                        break;
+                    case 'edit':
+                        message = '分类修改成功！';
+                        break;
+                    case 'delete':
+                        message = '分类删除成功！';
+                        break;
+                    default:
+                        message = '操作成功！';
+                }
+                
+                // 创建成功消息元素
+                const successDiv = document.createElement('div');
+                successDiv.className = 'alert alert-success alert-dismissible fade show';
+                successDiv.role = 'alert';
+                successDiv.innerHTML = `
+                    <strong>成功！</strong> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                
+                // 添加到页面顶部
+                container.insertBefore(successDiv, container.firstChild);
+                
+                // 3秒后自动关闭
+                setTimeout(() => {
+                    const alert = bootstrap.Alert.getInstance(successDiv);
+                    alert.close();
+                }, 3000);
+            }
+            
+            // 处理错误消息
+            if (urlParams.has('error')) {
+                const errorType = urlParams.get('error');
+                let message = '';
+                
+                if (errorType === 'hasBooks') {
+                    message = '该分类下存在图书，无法删除！请先移除分类中的图书。';
+                } else {
+                    message = '操作失败，请重试！';
+                }
+                
+                // 创建错误消息元素
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+                errorDiv.role = 'alert';
+                errorDiv.innerHTML = `
+                    <strong>错误！</strong> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                
+                // 添加到页面顶部
+                container.insertBefore(errorDiv, container.firstChild);
+                
+                // 3秒后自动关闭
+                setTimeout(() => {
+                    const alert = bootstrap.Alert.getInstance(errorDiv);
+                    alert.close();
+                }, 3000);
+            }
+        }
+        
+        // 添加分类表单验证
+        function validateAddForm() {
+            const nameInput = document.getElementById('addName');
+            const name = nameInput.value.trim();
+            
+            if (name === '') {
+                nameInput.classList.add('is-invalid');
+                return false;
+            }
+            
+            nameInput.classList.remove('is-invalid');
+            return true;
+        }
+        
+        // 编辑分类表单验证
+        function validateEditForm() {
+            const nameInput = document.getElementById('editName');
+            const name = nameInput.value.trim();
+            
+            if (name === '') {
+                nameInput.classList.add('is-invalid');
+                return false;
+            }
+            
+            nameInput.classList.remove('is-invalid');
+            return true;
+        }
+        
+        // 显示添加分类弹窗
+        function showAddCategoryModal() {
+            const addModal = new bootstrap.Modal(document.getElementById('addCategoryModal'));
+            document.getElementById('addCategoryForm').reset();
+            addModal.show();
+        }
+        
+        // 显示编辑分类弹窗
+        function showEditCategoryModal(id, name, description) {
+            const editModal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
+            document.getElementById('editId').value = id;
+            document.getElementById('editName').value = name;
+            document.getElementById('editDescription').value = description || '';
+            document.getElementById('editCategoryForm').setAttribute('action', '/admin/categories/edit/' + id);
+            editModal.show();
+        }
+        
+        // 显示删除确认弹窗
+        function showDeleteConfirmModal(id, name) {
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteCategoryModal'));
+            document.getElementById('deleteCategoryName').textContent = name;
+            document.getElementById('confirmDeleteBtn').setAttribute('href', '/admin/categories/delete/' + id);
+            deleteModal.show();
+        }
+        
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 处理URL参数，显示消息
+            handleUrlParams();
+            
+            // 添加分类按钮事件
+            document.getElementById('addCategoryBtn').addEventListener('click', showAddCategoryModal);
+            
+            // 添加分类表单提交事件
+            document.getElementById('addCategoryForm').addEventListener('submit', function(event) {
+                if (!validateAddForm()) {
+                    event.preventDefault();
+                }
+            });
+            
+            // 编辑分类表单提交事件
+            document.getElementById('editCategoryForm').addEventListener('submit', function(event) {
+                if (!validateEditForm()) {
+                    event.preventDefault();
+                }
+            });
+            
+            // 为所有编辑按钮添加事件
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const name = this.getAttribute('data-name');
+                    const description = this.getAttribute('data-description') || '';
+                    showEditCategoryModal(id, name, description);
+                });
+            });
+            
+            // 为所有删除按钮添加事件
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const name = this.getAttribute('data-name');
+                    showDeleteConfirmModal(id, name);
+                });
+            });
+            
+            // 输入框聚焦时移除错误样式
+            document.querySelectorAll('input, textarea').forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.classList.remove('is-invalid');
+                });
+            });
+            
+            // 模态框关闭时重置表单
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('hidden.bs.modal', function() {
+                    const form = this.querySelector('form');
+                    if (form) {
+                        form.reset();
+                        form.querySelectorAll('input, textarea').forEach(input => {
+                            input.classList.remove('is-invalid');
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+        </div>
+    </div>
+</body>
+</html>
