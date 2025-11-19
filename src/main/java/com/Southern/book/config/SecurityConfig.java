@@ -97,7 +97,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         // 公开访问的路径
                         .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/uploads/**", "/api/public/**").permitAll()
-                        // 需要 USER 或 ADMIN 角色的路径
+                        // 图书删除操作需要ADMIN角色
+                        .requestMatchers("/books/delete/**").hasRole("ADMIN")
+                        // 图书编辑操作需要ADMIN角色
+                        .requestMatchers("/books/edit/**", "/books/update/**").hasRole("ADMIN")
+                        // 图书添加操作需要ADMIN角色
+                        .requestMatchers("/books/add").hasRole("ADMIN")
+                        // 需要 USER 或 ADMIN 角色的其他图书路径
                         .requestMatchers("/books/**", "/api/books/**").hasAnyRole("USER", "ADMIN")
                         // 需要 ADMIN 角色的路径
                         .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
@@ -106,7 +112,10 @@ public class SecurityConfig {
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
-                        .defaultSuccessUrl("/") // 移除true参数，允许使用HomeController中的角色重定向逻辑
+                        .defaultSuccessUrl("/", true) // 添加true参数确保总是重定向到首页
+                        .failureUrl("/login?error=true") // 明确指定失败URL
+                        .usernameParameter("username") // 明确指定用户名参数
+                        .passwordParameter("password") // 明确指定密码参数
                         .permitAll()
                 )
                 .logout(logout -> logout

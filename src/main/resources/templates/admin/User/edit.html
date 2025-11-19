@@ -229,6 +229,14 @@
 </div>
 
 <script>
+    // 为了确保脚本能够正确执行，我们先将用户ID存储在HTML元素的data属性中
+    // 然后在JavaScript中通过DOM操作获取
+    const userIdElement = document.createElement('div');
+    userIdElement.style.display = 'none';
+    userIdElement.setAttribute('data-user-id', [[${user.id}]]);
+    userIdElement.id = 'userIdContainer';
+    document.body.appendChild(userIdElement);
+
     document.addEventListener('DOMContentLoaded', function() {
         // 密码强度检查
         const passwordInput = document.getElementById('password');
@@ -355,9 +363,38 @@
 
     // 删除用户函数
     function deleteUser() {
+        console.log('删除用户函数被调用');
+        // 获取用户ID
+        const userIdElement = document.getElementById('userIdContainer');
+        let userId;
+        
+        if (userIdElement) {
+            userId = userIdElement.getAttribute('data-user-id');
+            console.log('从DOM获取的用户ID:', userId);
+        }
+        
+        if (!userId) {
+            console.error('无法获取用户ID');
+            alert('删除失败：无法获取用户信息');
+            return;
+        }
+        
+        // 使用确认对话框
         if (confirm('确定要删除该用户吗？此操作不可撤销。删除用户可能会影响相关的借阅记录。')) {
-            const userId = [[${user.id}]];
-            window.location.href = '/admin/users/delete/' + userId;
+            console.log('用户确认删除，ID:', userId);
+            // 创建临时表单进行POST提交
+            try {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/admin/users/delete/' + userId;
+                document.body.appendChild(form);
+                form.submit();
+            } catch (error) {
+                console.error('删除操作失败:', error);
+                alert('删除操作执行失败');
+            }
+        } else {
+            console.log('用户取消删除操作');
         }
     }
 </script>

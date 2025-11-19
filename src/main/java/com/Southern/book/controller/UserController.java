@@ -330,11 +330,15 @@ public class UserController {
         return "redirect:/admin/users";
     }
 
-    @GetMapping("/delete/{id}")
+    @PostMapping("/delete/{id}")
     public String deleteUser(@PathVariable Long id, Model model) {
         try {
-            userService.deleteUser(id);
-            model.addAttribute("successMessage", "用户删除成功");
+            boolean deleted = userService.deleteUser(id);
+            if (deleted) {
+                model.addAttribute("successMessage", "用户删除成功");
+            } else {
+                model.addAttribute("errorMessage", "删除用户失败：用户不存在");
+            }
         } catch (Exception e) {
             model.addAttribute("errorMessage", "删除用户失败：" + e.getMessage());
         }

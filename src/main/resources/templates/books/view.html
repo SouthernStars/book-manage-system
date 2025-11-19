@@ -91,17 +91,21 @@
                             
                             <!-- 操作按钮 -->
                             <div class="action-buttons">
-                                <a th:href="@{/books}" class="btn btn-secondary">
-                                    <i class="fa fa-arrow-left"></i> 返回列表
-                                </a>
+
                                 <!-- 普通用户可见的借阅按钮 -->
                                 <div sec:authorize="hasRole('USER')" th:if="${book.availableCopies > 0}">
+                                    <a th:href="@{/books}" class="btn btn-secondary">
+                                        <i class="fa fa-arrow-left"></i> 返回列表
+                                    </a>
                                     <a th:href="@{|/borrow/borrow?bookId=${book.id}|}" class="btn btn-success ml-2">
                                         <i class="fa fa-hand-lizard-o"></i> 借阅图书
                                     </a>
                                 </div>
                                 <!-- 管理员可见的编辑和删除按钮 -->
                                 <div sec:authorize="hasRole('ADMIN')">
+                                    <a th:href="@{/books}" class="btn btn-secondary">
+                                        <i class="fa fa-arrow-left"></i> 返回列表
+                                    </a>
                                     <a th:href="@{|/books/edit/${book.id}|}" class="btn btn-primary ml-2">
                                         <i class="fa fa-edit"></i> 编辑图书
                                     </a>

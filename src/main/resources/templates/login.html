@@ -62,7 +62,12 @@
         </div>
         <form th:action="@{/login}" method="post">
             <div th:if="${param.error}" class="alert alert-danger">
-                <i class="fa fa-exclamation-circle"></i> 用户名或密码错误，请重试。
+                <i class="fa fa-exclamation-circle"></i> 登录失败
+                <span th:if="${param.error == 'true'}">：用户名或密码错误，请重试。</span>
+                <span th:unless="${param.error == 'true'}" th:text="${param.error}">。</span>
+            </div>
+            <div th:if="${param.status}" class="alert alert-warning">
+                <i class="fa fa-info-circle"></i> 状态码: <span th:text="${param.status}"></span>
             </div>
             <div th:if="${param.logout}" class="alert alert-success">
                 <i class="fa fa-info-circle"></i> 您已成功退出登录。

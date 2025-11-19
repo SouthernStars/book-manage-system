@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
 
 @Controller
@@ -81,6 +83,7 @@ public class BookController {
 
     // 显示添加图书表单
     @GetMapping("/add")
+    @PreAuthorize("hasRole('ADMIN')")
     public String showAddForm(Model model) {
         model.addAttribute("book", new Book());
         model.addAttribute("categories", categoryService.getAllCategories());
@@ -89,13 +92,16 @@ public class BookController {
 
     // 添加图书
     @PostMapping("/add")
+    @PreAuthorize("hasRole('ADMIN')")
     public String addBook(@ModelAttribute Book book, @RequestParam("coverImageFile") MultipartFile file,
-                         @RequestParam("categoryIds") List<Long> categoryIds) {
+                         @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds) {
         // 处理图片上传
         if (!file.isEmpty()) {
             try {
                 String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-                Path path = Paths.get(UPLOAD_DIR + fileName);
+                // 确保上传路径正确，包含末尾的斜杠
+                String uploadPath = UPLOAD_DIR.endsWith("/") ? UPLOAD_DIR : UPLOAD_DIR + "/";
+                Path path = Paths.get(uploadPath + fileName);
                 Files.createDirectories(path.getParent());
                 Files.write(path, file.getBytes());
                 book.setCoverImage("/images/" + fileName);
@@ -117,6 +123,7 @@ public class BookController {
 
     // 显示编辑图书表单
     @GetMapping("/edit/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public String showEditForm(@PathVariable Long id, Model model) {
         return bookService.getBookById(id)
                 .map(book -> {
@@ -132,19 +139,29 @@ public class BookController {
 
     // 更新图书
     @PostMapping("/update/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public String updateBook(@PathVariable Long id, @ModelAttribute Book book, 
-                           @RequestParam("coverImageFile") MultipartFile file,
-                           @RequestParam("categoryIds") List<Long> categoryIds) {
-        // 处理图片上传
-        if (!file.isEmpty()) {
-            try {
-                String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-                Path path = Paths.get(UPLOAD_DIR + fileName);
-                Files.createDirectories(path.getParent());
-                Files.write(path, file.getBytes());
-                book.setCoverImage("/images/" + fileName);
-            } catch (IOException e) {
-                e.printStackTrace();
+                           @RequestParam(value = "coverImageFile", required = false) MultipartFile file,
+                           @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds) {
+        // 先获取现有图书信息，保留原有的封面图片
+        Optional<Book> existingBook = bookService.getBookById(id);
+        if (existingBook.isPresent()) {
+            // 只有在用户上传新封面图片时才更新coverImage字段
+            if (file != null && !file.isEmpty()) {
+                try {
+                    String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+                    // 确保上传路径正确，包含末尾的斜杠
+                    String uploadPath = UPLOAD_DIR.endsWith("/") ? UPLOAD_DIR : UPLOAD_DIR + "/";
+                    Path path = Paths.get(uploadPath + fileName);
+                    Files.createDirectories(path.getParent());
+                    Files.write(path, file.getBytes());
+                    book.setCoverImage("/images/" + fileName);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                // 如果用户没有上传新封面，则保留原有的封面图片
+                book.setCoverImage(existingBook.get().getCoverImage());
             }
         }
         
@@ -176,6 +193,7 @@ public class BookController {
     
     // 删除图书
     @GetMapping("/delete/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public String deleteBook(@PathVariable Long id) {
         bookService.deleteBook(id);
         return "redirect:/books";
