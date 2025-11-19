@@ -25,4 +25,13 @@ public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Long
     int countActiveBorrowsByUser(@Param("userId") Long userId);
     
     List<BorrowRecord> findByStatusNot(String status);
+    
+    // 多条件搜索借阅记录
+    @Query("SELECT br FROM BorrowRecord br WHERE " +
+            "(:username IS NULL OR br.user.username LIKE CONCAT('%', :username, '%')) AND " +
+            "(:bookTitle IS NULL OR br.book.title LIKE CONCAT('%', :bookTitle, '%')) AND " +
+            "(:status IS NULL OR br.status = :status)")
+    List<BorrowRecord> searchBorrowRecords(@Param("username") String username,
+                                          @Param("bookTitle") String bookTitle, 
+                                          @Param("status") String status);
 }

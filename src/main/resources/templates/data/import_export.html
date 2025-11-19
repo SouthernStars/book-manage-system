@@ -87,7 +87,7 @@
                 </div>
                 <div class="card-body">
                     <h5 class="card-title mb-4">图书数据导入</h5>
-                    <form th:action="@{/data/import}" method="post" enctype="multipart/form-data">
+                    <form th:action="@{/data/import/books}" method="post" enctype="multipart/form-data">
                         <!-- 文件上传区域 -->
                         <div class="file-upload-area mb-4">
                             <div class="file-upload-icon">
@@ -101,19 +101,6 @@
                                 <p class="text-danger">文件大小请勿超过 10MB</p>
                             </div>
                             <input type="file" name="file" accept=".xlsx,.xls,.csv" class="mt-3" required>
-                        </div>
-                        
-                        <!-- 导入选项 -->
-                        <div class="mb-4">
-                            <h6 class="mb-2">导入选项：</h6>
-                            <div class="form-check mb-2">
-                                <input type="checkbox" id="override" name="override" class="form-check-input">
-                                <label for="override" class="form-check-label">覆盖已存在的图书数据</label>
-                            </div>
-                            <div class="form-check">
-                                <input type="checkbox" id="createCategories" name="createCategories" class="form-check-input" checked>
-                                <label for="createCategories" class="form-check-label">自动创建不存在的分类</label>
-                            </div>
                         </div>
                         
                         <!-- 操作按钮 -->
@@ -131,7 +118,6 @@
                     <div class="mt-4 p-3 bg-light rounded">
                         <h6>导入说明：</h6>
                         <ul class="list-unstyled">
-                            <li><i class="fa fa-info-circle text-primary mr-2"></i>Excel 模板包含以下列：书名、作者、ISBN、出版社、出版日期、分类、价格、数量、简介</li>
                             <li><i class="fa fa-info-circle text-primary mr-2"></i>CSV 文件请使用 UTF-8 编码，第一行为列标题</li>
                             <li><i class="fa fa-info-circle text-primary mr-2"></i>导入过程可能需要几分钟，请耐心等待</li>
                         </ul>
@@ -161,35 +147,18 @@
                             <div class="form-check mb-2">
                                 <input type="radio" id="exportBorrows" name="exportType" value="BORROW_RECORDS" class="form-check-input">
                                 <label for="exportBorrows" class="form-check-label">借阅记录</label>
-                            </div>
-                            <div class="form-check">
-                                <input type="radio" id="exportAll" name="exportType" value="ALL" class="form-check-input">
-                                <label for="exportAll" class="form-check-label">全部数据（分别导出为多个文件）</label>
+
                             </div>
                         </div>
                         
                         <!-- 导出格式选择 -->
                         <div class="mb-4">
                             <h6 class="mb-2">导出格式：</h6>
-                            <div class="form-check mb-2">
-                                <input type="radio" id="formatExcel" name="format" value="EXCEL" class="form-check-input" checked>
-                                <label for="formatExcel" class="form-check-label">Excel (.xlsx)</label>
-                            </div>
                             <div class="form-check">
                                 <input type="radio" id="formatCsv" name="format" value="CSV" class="form-check-input">
                                 <label for="formatCsv" class="form-check-label">CSV (.csv)</label>
                             </div>
                         </div>
-                        
-                        <!-- 图书导出选项 -->
-                        <div class="mb-4" id="bookOptions">
-                            <h6 class="mb-2">图书导出选项：</h6>
-                            <div class="form-check mb-2">
-                                <input type="checkbox" id="includeInactive" name="includeInactive" class="form-check-input">
-                                <label for="includeInactive" class="form-check-label">包含已下架图书</label>
-                            </div>
-                        </div>
-                        
                         <!-- 操作按钮 -->
                         <div>
                             <button type="submit" class="btn btn-primary">

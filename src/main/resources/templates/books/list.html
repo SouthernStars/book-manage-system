@@ -65,7 +65,9 @@
 <body>
 <div layout:fragment="content">
     <div class="container-fluid">
-        <h1 class="mb-4">图书管理</h1>
+        <!-- 根据角色显示不同标题 -->
+        <h1 class="mb-4" sec:authorize="hasRole('ADMIN')">图书管理</h1>
+        <h1 class="mb-4" sec:authorize="hasRole('USER')">图书浏览</h1>
 
         <!-- 消息提示 -->
         <div th:if="${successMessage}" class="alert alert-success">
@@ -123,7 +125,8 @@
                             th:text="${endIndex != null ? endIndex : 0}">10</strong> 条，共 <strong
                             th:text="${totalElements != null ? totalElements : 0}">100</strong> 条</span>
             </div>
-            <div>
+            <!-- 仅管理员显示添加图书按钮 -->
+            <div sec:authorize="hasRole('ADMIN')">
                 <a th:href="@{/books/add}" class="btn btn-success">
                     <i class="fa fa-plus"></i> 添加图书
                 </a>
@@ -196,7 +199,7 @@
                                     <i class="fa fa-eye" aria-hidden="true"></i>
                                     <span class="sr-only">查看</span>
                                 </a>
-                                <a th:href="@{|/borrow/borrow?bookId=${book.id}|}"
+                                <a th:href="@{|/borrow/user/borrow?bookId=${book.id}|}"
                                    class="btn btn-sm btn-success" title="借阅图书" aria-label="借阅图书">
                                     <i class="fa fa-hand-lizard-o" aria-hidden="true"></i> 借阅
                                 </a>
@@ -254,7 +257,7 @@
 <script>
     console.log('脚本开始执行 - 当前时间:', new Date().toISOString());
 
-    document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
         console.log('DOMContentLoaded 事件触发');
 
         // 删除确认功能

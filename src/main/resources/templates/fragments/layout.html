@@ -110,9 +110,7 @@
             菜单导航
         </div>
         <div class="sidebar-content">
-            <a class="sidebar-link" href="/">
-                <i class="fa fa-home"></i> 首页
-            </a>
+            <!-- 首页链接已移除 -->
 
             <!-- 管理员菜单 -->
             <div sec:authorize="hasRole('ADMIN')">
@@ -127,9 +125,11 @@
                 </a>
             </div>
 
-            <!-- 图书浏览菜单 - 面向所有用户 -->
+            <!-- 图书浏览菜单 - 根据角色显示不同文本 -->
             <a class="sidebar-link" href="/books">
-                <i class="fa fa-book"></i> 图书管理
+                <i class="fa fa-book"></i> 
+                <span sec:authorize="hasRole('USER')">图书借阅</span>
+                <span sec:authorize="!hasRole('USER')">图书管理</span>
             </a>
 
             <!-- 借阅管理菜单 - 管理员 -->
@@ -141,9 +141,6 @@
             
             <!-- 用户个人借阅记录 -->
             <div sec:authorize="hasRole('USER')">
-                <a class="sidebar-link" href="/borrow/user/borrow">
-                    <i class="fa fa-exchange"></i> 图书借阅
-                </a>
                 <a class="sidebar-link" href="/borrow/my-records">
                     <i class="fa fa-list-alt"></i> 我的借阅记录
                 </a>

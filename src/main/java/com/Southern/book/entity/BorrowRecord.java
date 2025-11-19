@@ -41,7 +41,7 @@ public class BorrowRecord {
         this.book = book;
         this.borrowDate = borrowDate;
         this.dueDate = dueDate;
-        this.status = "BORROWED";
+        this.status = "ACTIVE";
     }
 
     // Getters and Setters

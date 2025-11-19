@@ -44,6 +44,12 @@ public class BorrowService {
             throw new IllegalStateException("用户已借阅该书");
         }
         
+        // 检查用户当前借阅数量是否超过限制（最多5本）
+        int currentBorrowCount = borrowRecordRepository.countActiveBorrowsByUser(userId);
+        if (currentBorrowCount >= 5) {
+            throw new IllegalStateException("用户当前借阅图书数量已达上限（5本）");
+        }
+        
         // 检查可借阅数量
         if (book.getAvailableCopies() <= 0) {
             throw new IllegalStateException("该书已无可用副本");
@@ -80,8 +86,11 @@ public class BorrowService {
             record.setReturnDate(returnDate);
             record.setStatus("RETURNED");
             
-            // 增加图书可借阅数量
-            bookService.increaseAvailableCopies(record.getBook().getId());
+            // 增加图书可借阅数量 - 确保图书数量正确更新
+            Book book = record.getBook();
+            int newAvailableCopies = book.getAvailableCopies() + 1;
+            book.setAvailableCopies(newAvailableCopies);
+            bookService.updateBook(book.getId(), book);
             
             return borrowRecordRepository.save(record);
         });
@@ -141,5 +150,10 @@ public class BorrowService {
     // 根据ID获取借阅记录
     public Optional<BorrowRecord> getBorrowRecordById(Long id) {
         return borrowRecordRepository.findById(id);
+    }
+    
+    // 搜索借阅记录
+    public List<BorrowRecord> searchBorrowRecords(String username, String bookTitle, String status) {
+        return borrowRecordRepository.searchBorrowRecords(username, bookTitle, status);
     }
 }

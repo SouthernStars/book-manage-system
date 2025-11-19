@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -43,13 +44,34 @@ public class BorrowRecordController {
                                    @RequestParam(required = false) String bookTitle,
                                    @RequestParam(required = false) String status,
                                    Model model) {
-        Pageable pageable = PageRequest.of(page - 1, 10, Sort.by(Sort.Direction.DESC, "borrowDate"));
-        List<BorrowRecord> records = borrowService.getAllBorrowRecords();
+        int pageSize = 10;
         
-        // 模拟分页和搜索功能
+        // 使用搜索方法获取过滤后的记录
+        List<BorrowRecord> filteredRecords = borrowService.searchBorrowRecords(username, bookTitle, status);
+        
+        // 手动实现分页
+        int totalRecords = filteredRecords.size();
+        int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
+        
+        // 确保页码有效
+        if (page < 1) page = 1;
+        if (page > totalPages && totalPages > 0) page = totalPages;
+        
+        // 计算当前页的数据
+        int startIndex = (page - 1) * pageSize;
+        int endIndex = Math.min(startIndex + pageSize, totalRecords);
+        
+        List<BorrowRecord> records;
+        if (startIndex < totalRecords) {
+            records = filteredRecords.subList(startIndex, endIndex);
+        } else {
+            records = List.of();
+        }
+        
         model.addAttribute("records", records);
         model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", 1); // 简化处理，实际应该根据总数计算
+        model.addAttribute("totalPages", totalPages > 0 ? totalPages : 1);
+        model.addAttribute("totalRecords", totalRecords);
         model.addAttribute("username", username);
         model.addAttribute("bookTitle", bookTitle);
         model.addAttribute("status", status);
@@ -118,9 +140,15 @@ public class BorrowRecordController {
 
     @PostMapping("/borrow/borrow")
     @PreAuthorize("hasRole('ADMIN')")
-    public String borrowBook(@RequestParam Long userId, @RequestParam Long bookId, @RequestParam int days) {
-        borrowService.borrowBook(userId, bookId, days);
-        return "redirect:/borrow/records";
+    public String borrowBook(@RequestParam Long userId, @RequestParam Long bookId, @RequestParam int days, RedirectAttributes redirectAttributes) {
+        try {
+            borrowService.borrowBook(userId, bookId, days);
+            redirectAttributes.addFlashAttribute("successMessage", "图书借阅成功！");
+            return "redirect:/borrow/records";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/borrow/borrow?userId=" + userId + "&bookId=" + bookId;
+        }
     }
 
     @GetMapping("/return/{id}")
@@ -132,42 +160,37 @@ public class BorrowRecordController {
     
     @GetMapping("/user/borrow")
     @PreAuthorize("hasRole('USER')")
-    public String showUserBorrowForm(Model model, @RequestParam(required = false) Long bookId) {
-        // 获取当前用户信息
+    public String userBorrowBook(@RequestParam Long bookId, RedirectAttributes redirectAttributes) {
+        // 直接处理借阅请求，默认借阅14天
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        User currentUser = userService.getUserByUsername(username).orElseThrow(() -> new IllegalStateException("用户不存在"));
-        model.addAttribute("currentUser", currentUser);
+        User user = userService.getUserByUsername(username).orElseThrow(() -> new IllegalStateException("用户不存在"));
         
-        // 添加可用图书列表
-        model.addAttribute("books", bookService.getAvailableBooks());
-        
-        // 如果传入了bookId，则预填图书信息
-        if (bookId != null) {
-            bookService.getBookById(bookId).ifPresent(book -> model.addAttribute("selectedBook", book));
+        try {
+            // 默认借阅14天
+            borrowService.borrowBook(user.getId(), bookId, 14);
+            redirectAttributes.addFlashAttribute("successMessage", "图书借阅成功！默认借阅期14天。");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         
-        // 添加近期借阅记录
-        List<BorrowRecord> recentRecords = borrowService.getBorrowRecordsByUsername(username).stream()
-                .limit(5)
-                .toList();
-        model.addAttribute("recentRecords", recentRecords);
-        
-        return "borrow/borrow";
+        return "redirect:/borrow/my-records";
     }
     
     @PostMapping("/user/borrow")
     @PreAuthorize("hasRole('USER')")
-    public String userBorrowBook(@RequestParam Long bookId, @RequestParam int days) {
+    public String userBorrowBook(@RequestParam Long bookId, @RequestParam int days, RedirectAttributes redirectAttributes) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         User user = userService.getUserByUsername(username).orElseThrow(() -> new IllegalStateException("用户不存在"));
         
         try {
             borrowService.borrowBook(user.getId(), bookId, days);
-            return "redirect:/borrow/my-records?success=true";
+            redirectAttributes.addFlashAttribute("successMessage", "图书借阅成功！");
+            return "redirect:/borrow/my-records";
         } catch (Exception e) {
-            return "redirect:/borrow/user/borrow?error=" + e.getMessage() + "&bookId=" + bookId;
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/borrow/user/borrow?bookId=" + bookId;
         }
     }
     

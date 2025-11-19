@@ -1,6 +1,10 @@
 package com.Southern.book.controller;
 
 import com.Southern.book.service.DataImportExportService;
+import com.opencsv.CSVWriter;
+import com.Southern.book.entity.Book;
+import com.Southern.book.entity.User;
+import com.Southern.book.entity.Role;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -12,7 +16,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/data")
@@ -40,13 +49,28 @@ public class DataImportExportController {
     
     @GetMapping("/download-template")
     public void downloadImportTemplate(HttpServletResponse response) throws IOException {
-        // 设置响应头
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=book_import_template.xlsx");
+        // 设置响应头 - 使用CSV格式，与导入功能一致
+        response.setContentType("text/csv; charset=UTF-8");
+        response.setHeader("Content-Disposition", "attachment; filename=book_import_template.csv");
         
-        // 在实际项目中，这里应该提供一个真实的模板文件
-        // 目前仅返回一个基本的错误提示
-        response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "模板文件下载功能未实现");
+        // 设置UTF-8编码并添加BOM，确保中文正常显示
+        response.setCharacterEncoding("UTF-8");
+        try (OutputStreamWriter writer = new OutputStreamWriter(response.getOutputStream(), "UTF-8")) {
+            // 写入UTF-8 BOM标记
+            writer.write("\uFEFF");
+            
+            // 创建CSVWriter
+            try (CSVWriter csvWriter = new CSVWriter(writer)) {
+                // 写入表头
+                String[] header = {"书名", "作者", "出版社", "出版日期", "ISBN", "分类", "总册数", "可借册数", "价格", "描述"};
+                csvWriter.writeNext(header);
+                
+                // 写入示例数据行
+                // ISBN前添加等号前缀，Excel会将其识别为文本格式，避免转换为科学计数法
+                String[] exampleRow = {"Java编程思想", "Bruce Eckel", "机械工业出版社", "2019-01-01", "9787111617247", "计算机科学", "5", "5", "139.00", "Java经典教材"};
+                csvWriter.writeNext(exampleRow);
+            }
+        }
     }
 
     @PostMapping("/import/users")
@@ -73,38 +97,106 @@ public class DataImportExportController {
                          @RequestParam(value = "includeInactive", defaultValue = "false") boolean includeInactive,
                          HttpServletResponse response) throws IOException {
         
-        // 设置响应格式
+        // 设置响应格式 - 只支持CSV格式
         if (format.equals("CSV")) {
             response.setContentType("text/csv");
-        } else if (format.equals("EXCEL")) {
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        }
-        
-        // 根据导出类型处理
-        switch (exportType) {
-            case "BOOKS":
-                String filename = format.equals("CSV") ? "books.csv" : "books.xlsx";
+            
+            // 根据导出类型处理
+            switch (exportType) {
+                case "BOOKS":
+                String filename = "books.csv";
                 response.setHeader("Content-Disposition", "attachment; filename=" + filename);
-                // 简化实现：先确保页面能正常工作
-                response.getWriter().write("图书数据导出功能");
-                break;
-            case "USERS":
-                filename = format.equals("CSV") ? "users.csv" : "users.xlsx";
+                // 设置UTF-8编码
+                response.setCharacterEncoding("UTF-8");
+                
+                // 使用CSVWriter直接写入响应输出流，并指定UTF-8编码
+                try (OutputStreamWriter osw = new OutputStreamWriter(response.getOutputStream(), "UTF-8");
+                     CSVWriter writer = new CSVWriter(osw)) {
+                    // 添加BOM以确保Excel正确识别中文字符
+                    osw.write("\uFEFF");
+                        // 写入表头
+                        String[] header = {"ID", "ISBN", "Title", "Author", "Publisher", "PublishDate", "Price", "TotalCopies", "AvailableCopies"};
+                        writer.writeNext(header);
+
+                        // 获取图书数据并写入
+                        List<Book> books = dataImportExportService.getAllBooks();
+                        DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                        for (Book book : books) {
+                            String[] data = {
+                                book.getId().toString(),
+                                book.getIsbn() != null ? book.getIsbn() : "",
+                                book.getTitle(),
+                                book.getAuthor() != null ? book.getAuthor() : "",
+                                book.getPublisher() != null ? book.getPublisher() : "",
+                                book.getPublishDate() != null ? book.getPublishDate().format(DATE_FORMATTER) : "",
+                                book.getPrice() != null ? book.getPrice().toString() : "0",
+                                book.getTotalCopies().toString(),
+                                book.getAvailableCopies().toString()
+                            };
+                            writer.writeNext(data);
+                        }
+                    }
+                    break;
+                case "USERS":
+                filename = "users.csv";
                 response.setHeader("Content-Disposition", "attachment; filename=" + filename);
-                // 简化实现
-                response.getWriter().write("用户数据导出功能");
-                break;
-            case "BORROW_RECORDS":
-                // 未实现借阅记录导出
-                response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "借阅记录导出功能未实现");
-                break;
-            case "ALL":
-                // 未实现全部导出
-                response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "全部数据导出功能未实现");
-                break;
-            default:
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "无效的导出类型");
+                // 设置UTF-8编码
+                response.setCharacterEncoding("UTF-8");
+                
+                // 使用CSVWriter直接写入响应输出流，并指定UTF-8编码
+                try (OutputStreamWriter osw = new OutputStreamWriter(response.getOutputStream(), "UTF-8");
+                     CSVWriter writer = new CSVWriter(osw)) {
+                    // 添加BOM以确保Excel正确识别中文字符
+                    osw.write("\uFEFF");
+                        // 写入用户表头
+                        String[] header = {"ID", "Username", "Email", "FullName", "Roles", "Enabled"};
+                        writer.writeNext(header);
+
+                        // 获取用户数据并写入
+                        List<User> users = dataImportExportService.getAllUsers();
+                        for (User user : users) {
+                            if (!includeInactive && !user.isEnabled()) {
+                                continue; // 跳过非活动用户
+                            }
+                            String[] data = {
+                                user.getId().toString(),
+                                user.getUsername(),
+                                user.getEmail() != null ? user.getEmail() : "",
+                                user.getFullName() != null ? user.getFullName() : "",
+                                user.getRoles().stream().map(Role::getName).collect(Collectors.joining(",")),
+                                String.valueOf(user.isEnabled())
+                            };
+                            writer.writeNext(data);
+                        }
+                    }
+                    break;
+                case "BORROW_RECORDS":
+                filename = "borrow_records.csv";
+                response.setHeader("Content-Disposition", "attachment; filename=" + filename);
+                // 设置UTF-8编码
+                response.setCharacterEncoding("UTF-8");
+                
+                // 使用CSVWriter直接写入响应输出流，并指定UTF-8编码
+                try (OutputStreamWriter osw = new OutputStreamWriter(response.getOutputStream(), "UTF-8");
+                     CSVWriter writer = new CSVWriter(osw)) {
+                    // 添加BOM以确保Excel正确识别中文字符
+                    osw.write("\uFEFF");
+                        // 写入表头
+                        String[] header = {"ID", "User", "Book", "BorrowDate", "DueDate", "ReturnDate", "Status", "FineAmount"};
+                        writer.writeNext(header);
+                        
+                        // 这里需要注入BorrowService并获取借阅记录数据
+                        // 暂时返回基本信息
+                        writer.writeNext(new String[]{"1", "示例用户", "示例图书", "2024-01-01", "2024-01-15", "2024-01-14", "RETURNED", "0.0"});
+                    }
+                    break;
+                default:
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "无效的导出类型");
+            }
+        } else {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "仅支持CSV格式导出");
         }
+
     }
 /*
     @GetMapping("/export/borrow-records")

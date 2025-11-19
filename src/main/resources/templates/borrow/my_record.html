@@ -139,12 +139,11 @@
                                 th:classappend="${record.fineAmount != null && record.fineAmount > 0 ? 'text-danger font-weight-bold' : ''}"></td>
                             <td class="action-buttons">
                                 <span th:if="${record.status != 'RETURNED'}">
-                                    <form th:action="@{|/borrow/return/${record.id}|}" method="post" style="display:inline;">
-                                        <button type="submit" class="btn btn-sm btn-success" 
-                                                onclick="return confirm('确认要归还这本图书吗？');">
-                                            <i class="fa fa-check-circle"></i> 归还图书
-                                        </button>
-                                    </form>
+                                    <a th:href="@{|/borrow/user/return/${record.id}|}" 
+                                       class="btn btn-sm btn-success" 
+                                       onclick="return confirm('确认要归还这本图书吗？');">
+                                        <i class="fa fa-check-circle"></i> 归还图书
+                                    </a>
                                 </span>
                                 <span th:unless="${record.status != 'RETURNED'}">
                                     <span class="text-gray-400">已归还</span>

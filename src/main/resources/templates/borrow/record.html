@@ -30,7 +30,7 @@
     <div class="page-header">
         <h1 class="text-center my-4">借阅记录管理</h1>
     </div>
-    
+
     <!-- 消息提示 -->
     <div th:if="${successMessage}" class="alert alert-success">
         <i class="fa fa-check-circle"></i> <span th:text="${successMessage}">操作成功！</span>
@@ -38,23 +38,23 @@
     <div th:if="${errorMessage}" class="alert alert-danger">
         <i class="fa fa-exclamation-circle"></i> <span th:text="${errorMessage}">操作失败，请重试。</span>
     </div>
-    
+
     <!-- 搜索和筛选 -->
     <div class="search-form">
         <form th:action="@{/borrow/records}" method="get">
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <label for="username" class="form-label">用户名</label>
-                    <input type="text" id="username" name="username" th:value="${username}" 
+                    <input type="text" id="username" name="username" th:value="${username}"
                            class="form-control" placeholder="输入用户名">
                 </div>
-                
+
                 <div class="col-md-3 mb-3">
                     <label for="bookTitle" class="form-label">图书标题</label>
-                    <input type="text" id="bookTitle" name="bookTitle" th:value="${bookTitle}" 
+                    <input type="text" id="bookTitle" name="bookTitle" th:value="${bookTitle}"
                            class="form-control" placeholder="输入图书标题">
                 </div>
-                
+
                 <div class="col-md-3 mb-3">
                     <label for="status" class="form-label">状态</label>
                     <select id="status" name="status" class="form-control">
@@ -64,7 +64,7 @@
                         <option value="RETURNED" th:selected="${status == 'RETURNED'}">已归还</option>
                     </select>
                 </div>
-                
+
                 <div class="col-md-3 mb-3">
                     <label class="form-label">&nbsp;</label>
                     <div class="d-flex gap-2">
@@ -79,22 +79,19 @@
             </div>
         </form>
     </div>
-    
+
     <!-- 操作栏 -->
     <div class="d-flex justify-content-between mb-3">
         <div>
             <span class="text-muted">显示 <strong th:text="${startIndex != null ? startIndex + 1 : 1}">1</strong>-<strong th:text="${endIndex != null ? endIndex : 0}">10</strong> 条，共 <strong th:text="${totalElements != null ? totalElements : 0}">100</strong> 条</span>
         </div>
         <div>
-            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#borrowModal">
-                <i class="fa fa-plus"></i> 新增借阅
-            </button>
             <a href="/borrow/overdue" class="btn btn-danger ml-2">
                 <i class="fa fa-exclamation-triangle"></i> 逾期记录
             </a>
         </div>
     </div>
-    
+
     <!-- 借阅记录表格 -->
     <div class="card">
         <div class="card-body">
@@ -126,10 +123,10 @@
                                 <div th:text="${record.book.author}" class="text-sm text-gray-600"></div>
                             </td>
                             <td th:text="${#temporals.format(record.borrowDate, 'yyyy-MM-dd')}"></td>
-                            <td th:text="${#temporals.format(record.dueDate, 'yyyy-MM-dd')}" 
+                            <td th:text="${#temporals.format(record.dueDate, 'yyyy-MM-dd')}"
                                 th:classappend="${record.status == 'OVERDUE' ? 'text-danger font-weight-bold' : ''}"></td>
                             <td th:text="${record.returnDate != null ? #temporals.format(record.returnDate, 'yyyy-MM-dd') : '-'}"></td>
-                            <td th:text="${record.fineAmount != null ? record.fineAmount + ' 元' : '0 元'}" 
+                            <td th:text="${record.fineAmount != null ? record.fineAmount + ' 元' : '0 元'}"
                                 th:classappend="${record.fineAmount != null && record.fineAmount > 0 ? 'text-danger font-weight-bold' : ''}"></td>
                             <td>
                             <span th:switch="${record.status}">
@@ -141,8 +138,8 @@
                         </td>
                             <td class="action-buttons">
                             <span th:if="${record.status != 'RETURNED'}">
-                                <a th:href="@{/return/{id}(id=${record.id})}" 
-                                   class="btn btn-sm btn-primary" 
+                                <a th:href="@{/borrow/return/{id}(id=${record.id})}"
+                                   class="btn btn-sm btn-primary"
                                    onclick="return confirm('确定要归还这本书吗？');">
                                     <i class="fa fa-undo"></i> 归还
                                 </a>
@@ -155,7 +152,7 @@
                     </tbody>
                 </table>
             </div>
-            
+
             <!-- 分页 -->
             <div class="mt-4" th:if="${totalPages > 1}">
                 <nav aria-label="Page navigation">
@@ -163,11 +160,11 @@
                         <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled' : ''">
                             <a class="page-link" th:href="@{/borrow/records(page=${currentPage - 1},username=${username},bookTitle=${bookTitle},status=${status})}">上一页</a>
                         </li>
-                        <li th:each="pageNumber : ${#numbers.sequence(1, totalPages)}" 
-                            class="page-item" 
+                        <li th:each="pageNumber : ${#numbers.sequence(1, totalPages)}"
+                            class="page-item"
                             th:classappend="${pageNumber == currentPage} ? 'active' : ''">
-                            <a class="page-link" 
-                               th:href="@{/borrow/records(page=${pageNumber},username=${username},bookTitle=${bookTitle},status=${status})}" 
+                            <a class="page-link"
+                               th:href="@{/borrow/records(page=${pageNumber},username=${username},bookTitle=${bookTitle},status=${status})}"
                                th:text="${pageNumber}"></a>
                         </li>
                         <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled' : ''">
@@ -176,7 +173,7 @@
                     </ul>
                 </nav>
             </div>
-            
+
             <div class="text-center mt-3 text-muted" th:if="${records.empty}">
                 <i class="fa fa-info-circle"></i> 暂无借阅记录
             </div>
@@ -199,31 +196,31 @@
                             <label for="userId" class="font-weight-bold">选择用户 *</label>
                             <select id="userId" name="userId" class="form-control" required>
                                 <option value="" disabled selected>请选择用户</option>
-                                <option th:each="user : ${users}" 
-                                        th:value="${user.id}" 
+                                <option th:each="user : ${users}"
+                                        th:value="${user.id}"
                                         th:text="${user.username + ' - ' + user.fullName}"></option>
                             </select>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="bookId" class="font-weight-bold">选择图书 *</label>
                             <select id="bookId" name="bookId" class="form-control" required>
                                 <option value="" disabled selected>请选择图书</option>
-                                <option th:each="book : ${books}" 
-                                        th:value="${book.id}" 
+                                <option th:each="book : ${books}"
+                                        th:value="${book.id}"
                                         th:text="${book.title + ' (' + book.author + ')'}"></option>
                             </select>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="days" class="font-weight-bold">借阅天数 *</label>
-                            <input type="number" id="days" name="days" min="1" max="30" value="14" 
+                            <input type="number" id="days" name="days" min="1" max="30" value="14"
                                    class="form-control" required>
                             <small class="form-text text-white bg-info p-1 rounded mt-1">
                                 请输入借阅天数，最短1天，最长30天
                             </small>
                         </div>
-                        
+
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
                             <button type="submit" class="btn btn-success">
@@ -243,7 +240,7 @@
         setTimeout(function() {
             location.reload();
         }, 300000); // 5分钟自动刷新一次
-        
+
         // 表单提交验证
         const borrowForm = document.getElementById('borrowForm');
         if (borrowForm) {
@@ -251,19 +248,19 @@
                 const userId = document.getElementById('userId').value;
                 const bookId = document.getElementById('bookId').value;
                 const days = document.getElementById('days').value;
-                
+
                 if (!userId) {
                     alert('请选择用户');
                     event.preventDefault();
                     return;
                 }
-                
+
                 if (!bookId) {
                     alert('请选择图书');
                     event.preventDefault();
                     return;
                 }
-                
+
                 if (!days || days < 1 || days > 30) {
                     alert('借阅天数必须在1-30天之间');
                     event.preventDefault();
